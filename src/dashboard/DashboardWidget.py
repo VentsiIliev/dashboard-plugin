@@ -1,4 +1,4 @@
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import pyqtSignal, QEvent
 from PyQt6.QtWidgets import QWidget
 
 try:
@@ -154,3 +154,15 @@ class DashboardWidget(QWidget):
     def clean_up(self):
         """Release resources. Broker subscriptions are managed by DashboardAdapter."""
         pass
+
+    # ------------------------------------------------------------------ #
+    #  Localization                                                        #
+    # ------------------------------------------------------------------ #
+
+    def retranslateUi(self) -> None:
+        self.control_buttons.retranslateUi()
+
+    def changeEvent(self, event) -> None:
+        if event.type() == QEvent.Type.LanguageChange:
+            self.retranslateUi()
+        super().changeEvent(event)

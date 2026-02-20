@@ -11,6 +11,7 @@ Keyboard shortcuts for testing:
     G - Publish test glue type to cell 1
     A - Cycle application state
     T - Publish trajectory point
+    L - Cycle language (localization test)
     Space - Toggle auto-test mode
 """
 import sys
@@ -20,10 +21,12 @@ import random
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from PyQt6.QtWidgets import QApplication, QMainWindow, QStatusBar
-from PyQt6.QtCore import QTimer, Qt
+from PyQt6.QtCore import QTimer, Qt, QEvent
 from PyQt6.QtGui import QKeyEvent
+
 import numpy as np
 
+from localization import TranslationManager, Language
 from dashboard.DashboardWidget import DashboardWidget
 from glue_dispensing_dashboard.adapter.GlueAdapter import GlueAdapter
 from glue_dispensing_dashboard.core.container import GlueContainer
@@ -98,11 +101,14 @@ class TestPublisher:
 class TestWindow(QMainWindow):
     """Main window with keyboard shortcuts for testing."""
 
-    def __init__(self, dashboard, adapter, test_publisher):
+    def __init__(self, dashboard, adapter, test_publisher, translation_manager):
         super().__init__()
         self.dashboard = dashboard
         self.adapter = adapter
         self.test_publisher = test_publisher
+        self.translation_manager = translation_manager
+        self.available_languages = translation_manager.get_available_languages()
+        self.lang_index = 0
         self.auto_test_enabled = False
 
         self.setWindowTitle("Dashboard — full stack (no AppWidget) — Press SPACE for auto-test")
@@ -111,10 +117,15 @@ class TestWindow(QMainWindow):
 
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
-        self.status_bar.showMessage("Ready | W=weight | S=state | G=glue | A=app-state | T=point | I=image | R=start | X=stop | C=break | SPACE=auto")
+        self.status_bar.showMessage("Ready | W=weight | S=state | G=glue | A=app-state | T=point | I=image | R=start | X=stop | C=break | L=language | SPACE=auto")
 
         self.auto_timer = QTimer()
         self.auto_timer.timeout.connect(self.test_publisher.run_auto_test)
+
+    def changeEvent(self, event) -> None:
+        if event.type() == QEvent.Type.LanguageChange:
+            self.adapter.retranslateUi()
+        super().changeEvent(event)
 
     def keyPressEvent(self, event: QKeyEvent):
         key = event.key()
@@ -158,6 +169,13 @@ class TestWindow(QMainWindow):
             self.status_bar.showMessage("⚡ Trajectory break inserted", 2000)
             print("⚡ Trajectory break inserted")
 
+        elif key == Qt.Key.Key_L:
+            self.lang_index = (self.lang_index + 1) % len(self.available_languages)
+            lang = self.available_languages[self.lang_index]
+            self.translation_manager.load_language(lang)
+            self.status_bar.showMessage(f"Language: {lang.native_name} ({lang.code})", 3000)
+            print(f"🌐 Language switched to: {lang.native_name} ({lang.code})")
+
         elif key == Qt.Key.Key_Space:
             self.auto_test_enabled = not self.auto_test_enabled
             if self.auto_test_enabled:
@@ -175,6 +193,9 @@ class TestWindow(QMainWindow):
 
 app = QApplication(sys.argv)
 
+_translations_dir = Path(__file__).parent / "src/glue_dispensing_dashboard/localization/translations"
+translation_manager = TranslationManager(app, translations_dir=_translations_dir, file_prefix="glue")
+
 container = GlueContainer()
 built_cards = GlueAdapter.build_cards(container)
 dashboard = DashboardWidget(config=GlueAdapter.CONFIG,
@@ -189,7 +210,7 @@ dashboard.enable_trajectory_drawing()
 broker = MessageBroker()
 test_publisher = TestPublisher(broker)
 
-window = TestWindow(dashboard, adapter, test_publisher)
+window = TestWindow(dashboard, adapter, test_publisher, translation_manager)
 window.show()
 
 print("\n" + "="*60)
@@ -205,6 +226,7 @@ print("  I - Publish test image")
 print("  R - Enable trajectory drawing")
 print("  X - Disable trajectory drawing")
 print("  C - Break trajectory (start new line)")
+print("  L     - Cycle language (localization test)")
 print("  SPACE - Toggle auto-test mode (2s interval)")
 print("\n" + "="*60 + "\n")
 

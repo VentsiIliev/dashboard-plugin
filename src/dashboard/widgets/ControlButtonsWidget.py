@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFrame, QSizePolicy
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import pyqtSignal, QEvent
 
 try:
     from src.utils_widgets.MaterialButton import MaterialButton
@@ -50,9 +50,9 @@ class ControlButtonsWidget(QWidget):
         top_frame, top_layout = self._create_frame_with_layout()
         bottom_frame, bottom_layout = self._create_frame_with_layout()
 
-        self.start_btn = self._create_button(text="Start")
-        self.stop_btn  = self._create_button(text="Stop")
-        self.pause_btn = self._create_button(text="Pause")
+        self.start_btn = self._create_button(text=self.tr("Start"))
+        self.stop_btn  = self._create_button(text=self.tr("Stop"))
+        self.pause_btn = self._create_button(text=self.tr("Pause"))
 
         top_layout.addWidget(self.start_btn)
         top_layout.addWidget(self.pause_btn)
@@ -85,5 +85,19 @@ class ControlButtonsWidget(QWidget):
 
     def set_pause_text(self, text: str) -> None:
         self.pause_btn.setText(text)
+
+    # ------------------------------------------------------------------ #
+    #  Localization                                                        #
+    # ------------------------------------------------------------------ #
+
+    def retranslateUi(self) -> None:
+        self.start_btn.setText(self.tr("Start"))
+        self.stop_btn.setText(self.tr("Stop"))
+        self.pause_btn.setText(self.tr("Pause"))
+
+    def changeEvent(self, event) -> None:
+        if event.type() == QEvent.Type.LanguageChange:
+            self.retranslateUi()
+        super().changeEvent(event)
 
 

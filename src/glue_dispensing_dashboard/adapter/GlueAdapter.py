@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from typing import Callable
 
+from PyQt6.QtCore import QCoreApplication
+
 try:
     from .MessageBroker import MessageBroker
 except ImportError:
@@ -95,6 +97,7 @@ class GlueAdapter:
         self._broker = MessageBroker()
         self._subscriptions: list[tuple[str, Callable]] = []
         self._mode_toggle_index: int = 0
+        self._current_state: ApplicationState | None = None
 
     def connect(self) -> None:
         self._subscribe_broker_to_ui()
@@ -166,12 +169,13 @@ class GlueAdapter:
                 state = ApplicationState(state_data)
         except (KeyError, ValueError):
             return
+        self._current_state = state
         config = self.BUTTON_CONFIG.get(state)
         if config:
             self._dashboard.set_start_enabled(config["start"])
             self._dashboard.set_stop_enabled(config["stop"])
             self._dashboard.set_pause_enabled(config["pause"])
-            self._dashboard.set_pause_text(config["pause_text"])
+            self._dashboard.set_pause_text(self._t(config["pause_text"]))
 
     def _on_start(self):
         print(f"Start Pressed")
@@ -186,7 +190,7 @@ class GlueAdapter:
         if action_id == "mode_toggle":
             self._mode_toggle_index = 1 - self._mode_toggle_index
             new_label = self._MODE_TOGGLE_LABELS[self._mode_toggle_index]
-            self._dashboard.set_action_button_text("mode_toggle", new_label)
+            self._dashboard.set_action_button_text("mode_toggle", self._t(new_label))
             self._broker.publish(SystemTopics.SYSTEM_MODE_CHANGE, new_label)
             print(f"Mode Toggled to {new_label}")
         elif action_id == "clean":
@@ -219,6 +223,37 @@ class GlueAdapter:
         self._broker.subscribe(topic, callback)
         self._subscriptions.append((topic, callback))
 
+    # ------------------------------------------------------------------ #
+    #  Localization                                                        #
+    # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def _t(text: str) -> str:
+        return QCoreApplication.translate("GlueAdapter", text)
+
+    def retranslateUi(self) -> None:
+        """Re-apply translated labels for all adapter-owned strings.
+        Called by GlueDashboardAppWidget.changeEvent on LanguageChange."""
+        # Static action buttons (reset_errors, clean — labels never change)
+        for cfg in self.ACTION_BUTTONS:
+            self._dashboard.set_action_button_text(cfg.action_id, self._t(cfg.label))
+
+        # Mode toggle tracks its own position independently
+        self._dashboard.set_action_button_text(
+            "mode_toggle", self._t(self._MODE_TOGGLE_LABELS[self._mode_toggle_index])
+        )
+
+        # Pause button text depends on current state
+        if self._current_state is not None:
+            config = self.BUTTON_CONFIG.get(self._current_state)
+            if config:
+                self._dashboard.set_pause_text(self._t(config["pause_text"]))
+
+        # Card titles
+        for cfg in self.CARDS:
+            card = self._dashboard._cards.get(cfg.card_id)
+            if card:
+                card.title_label.setText(self._t(cfg.label))
 
 # Backward-compat alias
 DashboardAdapter = GlueAdapter

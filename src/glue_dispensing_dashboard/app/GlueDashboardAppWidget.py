@@ -1,4 +1,4 @@
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import pyqtSignal, QEvent
 
 try:
     from frontend.core.shared.base_widgets.AppWidget import AppWidget
@@ -79,6 +79,12 @@ class GlueDashboardAppWidget(AppWidget):
         self._adapter.disconnect()
         super().closeEvent(event)
         self.LOGOUT_REQUEST.emit()
+
+    def changeEvent(self, event) -> None:
+        if event.type() == QEvent.Type.LanguageChange:
+            if hasattr(self, "_adapter"):
+                self._adapter.retranslateUi()
+        super().changeEvent(event)
 
     def clean_up(self):
         self._adapter.disconnect()

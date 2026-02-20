@@ -1,6 +1,6 @@
 from typing import Optional
 
-from PyQt6.QtCore import pyqtSignal, Qt
+from PyQt6.QtCore import pyqtSignal, Qt, QEvent
 from PyQt6.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QFrame
 
 try:
@@ -45,6 +45,8 @@ class GlueMeterCard(QFrame):
         self.label_text = label_text
         self.index = index
         self.card_index = index
+        self._current_state_str: str = "unknown"
+        self._current_glue_type: Optional[str] = None
         self.meter_widget = GlueMeterWidget(index, capacity_grams=capacity_grams)
         self._build_ui()
 
@@ -52,11 +54,13 @@ class GlueMeterCard(QFrame):
         self.meter_widget.set_weight(grams)
 
     def set_state(self, state_str: str) -> None:
+        self._current_state_str = state_str
         self._update_indicator(state_str)
         self.meter_widget.set_state(state_str)
 
     def set_glue_type(self, glue_type: Optional[str]) -> None:
-        self.glue_type_label.setText(f"🧪 {glue_type}" if glue_type else "No glue configured")
+        self._current_glue_type = glue_type
+        self.glue_type_label.setText(f"🧪 {glue_type}" if glue_type else self.tr("No glue configured"))
 
     def initialize_display(self, initial_state: Optional[dict], glue_type: Optional[str]) -> None:
         if initial_state:
@@ -66,13 +70,13 @@ class GlueMeterCard(QFrame):
 
     def _update_indicator(self, state_str: str) -> None:
         state_config = {
-            "unknown":       {"color": STATUS_UNKNOWN,       "text": "Unknown"},
-            "initializing":  {"color": STATUS_INITIALIZING,  "text": "Initializing..."},
-            "ready":         {"color": STATUS_READY,         "text": "Ready"},
-            "low_weight":    {"color": STATUS_LOW_WEIGHT,    "text": "Low Weight"},
-            "empty":         {"color": STATUS_EMPTY,         "text": "Empty"},
-            "error":         {"color": STATUS_ERROR,         "text": "Error"},
-            "disconnected":  {"color": STATUS_DISCONNECTED,  "text": "Disconnected"},
+            "unknown":       {"color": STATUS_UNKNOWN,       "text": self.tr("Unknown")},
+            "initializing":  {"color": STATUS_INITIALIZING,  "text": self.tr("Initializing...")},
+            "ready":         {"color": STATUS_READY,         "text": self.tr("Ready")},
+            "low_weight":    {"color": STATUS_LOW_WEIGHT,    "text": self.tr("Low Weight")},
+            "empty":         {"color": STATUS_EMPTY,         "text": self.tr("Empty")},
+            "error":         {"color": STATUS_ERROR,         "text": self.tr("Error")},
+            "disconnected":  {"color": STATUS_DISCONNECTED,  "text": self.tr("Disconnected")},
         }
         cfg = state_config.get(str(state_str).lower(), state_config["unknown"])
         self.state_indicator.setStyleSheet(
@@ -106,7 +110,7 @@ class GlueMeterCard(QFrame):
         info_layout = QHBoxLayout(info_widget)
         info_layout.setContentsMargins(10, 8, 10, 8)
         info_layout.setSpacing(10)
-        self.glue_type_label = QLabel("🧪 Loading...")
+        self.glue_type_label = QLabel(self.tr("🧪 Loading..."))
         self.glue_type_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         self.glue_type_label.setStyleSheet("""
             QLabel {
@@ -119,7 +123,7 @@ class GlueMeterCard(QFrame):
             }
         """)
         info_layout.addWidget(self.glue_type_label, 1)
-        self.change_glue_button = MaterialButton("⚙ Change")
+        self.change_glue_button = MaterialButton(self.tr("⚙ Change"))
         self.change_glue_button.clicked.connect(lambda: self.change_glue_requested.emit(self.index))
         info_layout.addWidget(self.change_glue_button)
         main_layout.addWidget(info_widget)
@@ -128,4 +132,19 @@ class GlueMeterCard(QFrame):
         self.meter_widget.setStyleSheet(METER_FRAME_STYLE)
         main_layout.addStretch()
         self.setStyleSheet(CARD_STYLE)
+
+    # ------------------------------------------------------------------ #
+    #  Localization                                                        #
+    # ------------------------------------------------------------------ #
+
+    def retranslateUi(self) -> None:
+        self.change_glue_button.setText(self.tr("⚙ Change"))
+        self._update_indicator(self._current_state_str)
+        if self._current_glue_type is None:
+            self.glue_type_label.setText(self.tr("🧪 Loading..."))
+
+    def changeEvent(self, event) -> None:
+        if event.type() == QEvent.Type.LanguageChange:
+            self.retranslateUi()
+        super().changeEvent(event)
 
