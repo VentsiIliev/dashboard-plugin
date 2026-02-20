@@ -24,7 +24,7 @@ from PyQt6.QtCore import QTimer, Qt
 from PyQt6.QtGui import QKeyEvent
 import numpy as np
 
-from dashboard.ui.DashboardWidget import DashboardWidget
+from dashboard.DashboardWidget import DashboardWidget
 from glue_dispensing_dashboard.adapter.GlueAdapter import GlueAdapter
 from glue_dispensing_dashboard.core.container import GlueContainer
 from glue_dispensing_dashboard.adapter.MessageBroker import MessageBroker

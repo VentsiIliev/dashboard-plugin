@@ -20,7 +20,7 @@ try:
         CellWeightMonitorProtocol,
     )
 except ImportError:
-    from src.dashboard.core.protocols import (
+    from src.glue_dispensing_dashboard.core.protocols import (
         ControllerProtocol,
         GlueCellManagerProtocol,
         CellStateManagerProtocol,
@@ -117,4 +117,3 @@ class GlueContainer:
 
 # Backward-compat alias
 DashboardContainer = GlueContainer
-

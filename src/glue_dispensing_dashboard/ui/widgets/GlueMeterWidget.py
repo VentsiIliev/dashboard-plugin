@@ -5,7 +5,7 @@ from PyQt6.QtGui import QFont, QPainter, QPen, QColor
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QSizePolicy, QLabel, QHBoxLayout
 
 try:
-    from src.dashboard.styles import ICON_COLOR, STATUS_UNKNOWN, STATUS_READY, STATUS_ERROR, STATUS_DISCONNECTED
+    from src.dashboard.resources.styles import ICON_COLOR, STATUS_UNKNOWN, STATUS_READY, STATUS_ERROR, STATUS_DISCONNECTED
 except ImportError:
     try:
         from dashboard.styles import ICON_COLOR, STATUS_UNKNOWN, STATUS_READY, STATUS_ERROR, STATUS_DISCONNECTED

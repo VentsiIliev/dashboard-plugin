@@ -8,7 +8,7 @@ from dataclasses import dataclass
 try:
     from dashboard.core.config import DashboardConfig
 except ImportError:
-    from src.dashboard.core.config import DashboardConfig
+    from src.dashboard.config import DashboardConfig
 
 
 @dataclass

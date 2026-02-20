@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFrame, QSizePoli
 from PyQt6.QtCore import pyqtSignal
 
 try:
-    from .shared.MaterialButton import MaterialButton
+    from src.utils_widgets.MaterialButton import MaterialButton
 except ImportError:
     from MaterialButton import MaterialButton
 
@@ -87,11 +87,3 @@ class ControlButtonsWidget(QWidget):
         self.pause_btn.setText(text)
 
 
-if __name__ == "__main__":
-    import sys
-    from PyQt6.QtWidgets import QApplication
-
-    app = QApplication(sys.argv)
-    window = ControlButtonsWidget()
-    window.show()
-    sys.exit(app.exec())

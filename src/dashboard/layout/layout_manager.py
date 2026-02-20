@@ -4,12 +4,12 @@ from PyQt6.QtCore import Qt
 from typing import List
 
 try:
-    from ..widgets.shared.MaterialButton import MaterialButton
+    from src.utils_widgets.MaterialButton import MaterialButton
 except ImportError:
     from MaterialButton import MaterialButton
 
 try:
-    from ...styles import BORDER, SLOT_PLACEHOLDER_STYLE
+    from src.dashboard.resources.styles import BORDER, SLOT_PLACEHOLDER_STYLE
 except ImportError:
     try:
         from dashboard.styles import BORDER, SLOT_PLACEHOLDER_STYLE
@@ -195,7 +195,7 @@ class DashboardLayoutManager:
             """Find the first cell where a widget of given span fits."""
             for r in range(rows):
                 for c in range(cols):
-                    # Check if top-left cell is free
+                    # Check if the top-left cell is free
                     if (r, c) in occupied:
                         continue
                     # Check if all cells in the span are free

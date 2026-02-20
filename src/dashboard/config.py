@@ -18,13 +18,22 @@ class DashboardConfig:
     preview_aux_rows: int = 2
     preview_aux_cols: int = 3
     show_placeholders: bool = True
-    combo_style: "ComboBoxStyle" = None
 
-    def __post_init__(self):
-        if self.combo_style is None:
-            try:
-                from ..ui.widgets.shared.ComboBoxStyle import ComboBoxStyle
-            except ImportError:
-                from ComboBoxStyle import ComboBoxStyle
-            self.combo_style = ComboBoxStyle()
+@dataclass
+class ActionButtonConfig:
+    action_id: str
+    label: str
+    font_size: int = 20
+    enabled: bool = True
+    row: int | None = None
+    col: int | None = None
+    row_span: int = 1
+    col_span: int = 1
 
+
+@dataclass
+class CardConfig:
+    card_id: int
+    label: str
+    row: int | None = None
+    col: int | None = None

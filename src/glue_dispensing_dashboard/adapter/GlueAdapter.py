@@ -26,9 +26,10 @@ except ImportError:
     from src.glue_dispensing_dashboard.adapter.ApplicationState import ApplicationState
 
 try:
-    from src.dashboard.ui.DashboardWidget import DashboardWidget, ActionButtonConfig, CardConfig
+    from src.dashboard.DashboardWidget import DashboardWidget, ActionButtonConfig, CardConfig
 except ImportError:
-    from dashboard.ui.DashboardWidget import DashboardWidget, ActionButtonConfig, CardConfig
+    from dashboard.DashboardWidget import DashboardWidget
+    from dashboard.config import ActionButtonConfig, CardConfig
 
 try:
     from ..core.container import GlueContainer
@@ -41,9 +42,9 @@ except ImportError:
     from glue_dispensing_dashboard.core.config import GlueDashboardConfig
 
 try:
-    from ..ui.setupWizard import SetupWizard
+    from ..ui.glue_change_guide_wizard import create_glue_change_wizard
 except ImportError:
-    from glue_dispensing_dashboard.ui.setupWizard import SetupWizard
+    from glue_dispensing_dashboard.ui.setupWizard import create_glue_change_wizard
 
 try:
     from ..ui.factories.GlueCardFactory import GlueCardFactory
@@ -194,11 +195,13 @@ class GlueAdapter:
             print(f"Reset Errors Pressed")
 
     def _on_glue_type_change(self, cell_id: int):
-        wizard = SetupWizard(glue_type_names=self._container.get_all_glue_types())
+        wizard = create_glue_change_wizard(glue_type_names=self._container.get_all_glue_types())
         wizard.setWindowTitle(f"Change Glue for Cell {cell_id}")
         result = wizard.exec()
         if result == 1:
-            selected_glue_type = wizard.get_selected_glue_type()
+            # Get the selection step (page index 6)
+            selection_page = wizard.page(6)
+            selected_glue_type = selection_page.get_selected_option() if hasattr(selection_page, 'get_selected_option') else None
             if selected_glue_type:
                 self._dashboard.set_cell_glue_type(cell_id, selected_glue_type)
 

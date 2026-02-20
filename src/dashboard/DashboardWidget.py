@@ -1,36 +1,14 @@
-from dataclasses import dataclass
 from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtWidgets import QWidget, QGridLayout, QSizePolicy
-
-
-@dataclass
-class ActionButtonConfig:
-    action_id: str
-    label: str
-    font_size: int = 20
-    enabled: bool = True
-    row: int | None = None
-    col: int | None = None
-    row_span: int = 1
-    col_span: int = 1
-
-
-@dataclass
-class CardConfig:
-    card_id: int
-    label: str
-    row: int | None = None
-    col: int | None = None
-
+from PyQt6.QtWidgets import QWidget
 
 try:
-    from .widgets.shared.MaterialButton import MaterialButton
-    from .widgets.ControlButtonsWidget import ControlButtonsWidget
-    from .widgets.RobotTrajectoryWidget import RobotTrajectoryWidget
-    from ..core.config import DashboardConfig
-    from .managers.DashboardLayoutManager import DashboardLayoutManager
+    from src.utils_widgets.MaterialButton import MaterialButton
+    from src.dashboard.widgets.ControlButtonsWidget import ControlButtonsWidget
+    from src.dashboard.widgets.RobotTrajectoryWidget import RobotTrajectoryWidget
+    from src.dashboard.config import DashboardConfig
+    from src.dashboard.layout.layout_manager import DashboardLayoutManager
 except ImportError:
-    from dashboard.ui.widgets.shared.MaterialButton import MaterialButton
+
     from dashboard.ui.widgets.ControlButtonsWidget import ControlButtonsWidget
     from dashboard.ui.widgets.RobotTrajectoryWidget import RobotTrajectoryWidget
     from dashboard.core.config import DashboardConfig

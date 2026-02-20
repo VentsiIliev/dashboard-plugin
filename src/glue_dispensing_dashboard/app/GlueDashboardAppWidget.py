@@ -11,7 +11,7 @@ except ImportError:
     from dashboard.glue.core.container import GlueContainer
 
 try:
-    from src.dashboard.ui.DashboardWidget import DashboardWidget
+    from src.dashboard.DashboardWidget import DashboardWidget
 except ImportError:
     from dashboard.ui.DashboardWidget import DashboardWidget
 
@@ -21,12 +21,12 @@ except ImportError:
     from dashboard.glue.adapter.GlueAdapter import GlueAdapter
 
 try:
-    from src.dashboard.ui.DashboardWidget import ActionButtonConfig
+    from src.dashboard.DashboardWidget import ActionButtonConfig
 except ImportError:
     from dashboard.ui.DashboardWidget import ActionButtonConfig
 
 
-class GlueAppWidget(AppWidget):
+class GlueDashboardAppWidget(AppWidget):
     """
     Entry point: wires DashboardWidget (Level 1) + GlueAdapter (Level 2)
     and exposes signals to the parent application.
@@ -87,5 +87,5 @@ class GlueAppWidget(AppWidget):
 
 
 # Backward-compat alias
-DashboardAppWidget = GlueAppWidget
+DashboardAppWidget = GlueDashboardAppWidget
 

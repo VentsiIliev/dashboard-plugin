@@ -20,7 +20,7 @@ except ImportError:
 
 
 try:
-    from ...styles import BORDER, BG_COLOR, METRIC_BLUE, METRIC_GREEN, TEXT_VALUE, IMAGE_LABEL_STYLE, CONTAINER_FRAME_STYLE
+    from src.dashboard.resources.styles import BORDER, BG_COLOR, METRIC_BLUE, METRIC_GREEN, TEXT_VALUE, IMAGE_LABEL_STYLE, CONTAINER_FRAME_STYLE
 except ImportError:
     try:
         from dashboard.styles import BORDER, BG_COLOR, METRIC_BLUE, METRIC_GREEN, TEXT_VALUE, IMAGE_LABEL_STYLE, CONTAINER_FRAME_STYLE

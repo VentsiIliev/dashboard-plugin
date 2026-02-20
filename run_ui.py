@@ -11,7 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from PyQt6.QtWidgets import QApplication
-from dashboard.ui.DashboardWidget import DashboardWidget
+from dashboard.DashboardWidget import DashboardWidget
 
 app = QApplication(sys.argv)
 w = DashboardWidget()
