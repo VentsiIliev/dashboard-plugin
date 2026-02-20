@@ -10,19 +10,35 @@ from PyQt6.QtGui import QFont, QImage, QPixmap
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout, QFrame, QSizePolicy
 
 try:
-    from frontend.core.utils.IconLoader import LOGO
-    from frontend.core.utils.IconLoader import CAMERA_PREVIEW_PLACEHOLDER
+    from ...core.IconLoader import LOGO, CAMERA_PREVIEW_PLACEHOLDER
 except ImportError:
-    LOGO = ""
-    CAMERA_PREVIEW_PLACEHOLDER = ""
+    try:
+        from dashboard.core.IconLoader import LOGO, CAMERA_PREVIEW_PLACEHOLDER
+    except ImportError:
+        LOGO = ""
+        CAMERA_PREVIEW_PLACEHOLDER = ""
+
+
+try:
+    from ...styles import BORDER, BG_COLOR, METRIC_BLUE, METRIC_GREEN, TEXT_VALUE, IMAGE_LABEL_STYLE, CONTAINER_FRAME_STYLE
+except ImportError:
+    try:
+        from dashboard.styles import BORDER, BG_COLOR, METRIC_BLUE, METRIC_GREEN, TEXT_VALUE, IMAGE_LABEL_STYLE, CONTAINER_FRAME_STYLE
+    except ImportError:
+        BORDER = "#E4E6F0"
+        BG_COLOR = "#F6F7FB"
+        METRIC_BLUE = "#1976D2"
+        METRIC_GREEN = "#388E3C"
+        TEXT_VALUE = "#212121"
+        IMAGE_LABEL_STYLE = CONTAINER_FRAME_STYLE = ""
 
 
 class CompactTimeMetric(QWidget):
     """Compact time metric with horizontal layout"""
 
-    def __init__(self, title, value="0.00 s", color="#1976D2", parent=None):
+    def __init__(self, title, value="0.00 s", color=None, parent=None):
         super().__init__(parent)
-        self.color = color
+        self.color = color or METRIC_BLUE
         self.init_ui(title, value)
 
     def init_ui(self, title, value):
@@ -36,7 +52,7 @@ class CompactTimeMetric(QWidget):
 
         self.value_label = QLabel(value)
         self.value_label.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
-        self.value_label.setStyleSheet("color: #212121; font-weight: 600;")
+        self.value_label.setStyleSheet(f"color: {TEXT_VALUE}; font-weight: 600;")
 
         layout.addWidget(self.title_label)
         layout.addWidget(self.value_label)
@@ -267,8 +283,8 @@ class RobotTrajectoryWidget(QWidget):
     def init_ui(self):
         self.setWindowTitle("Trajectory Tracker")
 
-        self.estimated_metric = CompactTimeMetric("Est. Time", "0.00 s", "#1976D2")
-        self.time_left_metric = CompactTimeMetric("Time Left", "0.00 s", "#388E3C")
+        self.estimated_metric = CompactTimeMetric("Est. Time", "0.00 s", METRIC_BLUE)
+        self.time_left_metric = CompactTimeMetric("Time Left", "0.00 s", METRIC_GREEN)
 
         metrics_layout = QHBoxLayout()
         metrics_layout.setSpacing(16)
@@ -281,39 +297,27 @@ class RobotTrajectoryWidget(QWidget):
 
         self.image_label = QLabel()
         self.image_label.setFixedSize(self.image_width, self.image_height)
-        self.image_label.setStyleSheet("""
-            QLabel {
-                background-color: #F5F5F5;
-                border-radius: 6px;
-                border: 1px solid #E0E0E0;
-            }
-        """)
+        self.image_label.setStyleSheet(IMAGE_LABEL_STYLE)
         self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.image_label.setScaledContents(False)
         self.image_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         container_layout = QVBoxLayout()
-        container_layout.setSpacing(12)
-        container_layout.setContentsMargins(12, 12, 12, 12)
+        container_layout.setSpacing(4)
+        container_layout.setContentsMargins(4, 4, 4, 4)
         container_layout.addWidget(metrics_widget)
         container_layout.addWidget(self.image_label)
 
         container_frame = QFrame()
         container_frame.setLayout(container_layout)
-        container_frame.setStyleSheet("""
-            QFrame {
-                background-color: white;
-                border-radius: 8px;
-                border: 1px solid #E0E0E0;
-            }
-        """)
+        container_frame.setStyleSheet(CONTAINER_FRAME_STYLE)
 
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(12, 12, 12, 12)
+        main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.addWidget(container_frame)
 
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.setMinimumSize(self.image_width + 48, self.image_height + 100)
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.setFixedSize(self.image_width + 8, self.image_height + 8)
 
     def load_placeholder_image(self):
         try:

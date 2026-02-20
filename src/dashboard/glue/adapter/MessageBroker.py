@@ -31,7 +31,6 @@ class MessageBroker:
             weak_callback = weakref.ref(callback, self._cleanup_callback(topic, callback))
 
         self.subscribers[topic].append(weak_callback)
-        print(f"Subscribed to topic '{topic}' with callback {callback.__name__ if hasattr(callback, '__name__') else str(callback)}")
         self.logger.debug(f"Subscribed to topic '{topic}'. Total subscribers: {len(self.subscribers[topic])}")
 
     def _cleanup_callback(self, topic: str, original_callback: Callable):
@@ -47,8 +46,6 @@ class MessageBroker:
                 # Clean up empty topic
                 if topic in self.subscribers and not self.subscribers[topic]:
                     del self.subscribers[topic]
-                self.logger.debug(f"Auto-cleaned up dead reference for topic '{topic}'")
-
         return cleanup
 
     def unsubscribe(self, topic: str, callback: Callable):
@@ -67,17 +64,9 @@ class MessageBroker:
         if not self.subscribers[topic]:
             del self.subscribers[topic]
 
-        removed_count = original_count - len(self.subscribers.get(topic, []))
-        if removed_count > 0:
-            self.logger.debug(f"Unsubscribed {removed_count} callback(s) from topic '{topic}'")
-
     def publish(self, topic: str, message: Any):
         """Publish message to all live subscribers"""
-        # print(f"[MessageBroker] Publishing to topic '{topic}' message: {message}")
-
         if topic not in self.subscribers:
-            # print(f"[MessageBroker] WARNING: No subscribers for topic '{topic}'")
-            self.logger.debug(f"No subscribers for topic '{topic}'")
             return
         # Get all live callbacks and clean up dead ones
         live_callbacks = []
@@ -96,33 +85,22 @@ class MessageBroker:
                 ref for ref in self.subscribers[topic]
                 if ref not in dead_refs
             ]
-            self.logger.debug(f"Cleaned up {len(dead_refs)} dead references for topic '{topic}'")
 
         # Call all live callbacks
-        successful_calls = 0
-        failed_calls = 0
-
         for callback in live_callbacks:
             try:
-                self.logger.debug(f"Publishing to topic: '{topic}' message: {message}")
                 callback(message)
-                successful_calls += 1
             except Exception as e:
                 import traceback
                 traceback.print_exc()
-                failed_calls += 1
+                self.logger.error(f"Error calling subscriber for topic '{topic}': {e}")
                 # DEBUG: Show which object/method is causing the error
                 callback_info = f"{callback.__self__.__class__.__name__}.{callback.__name__}" if hasattr(callback, '__self__') else str(callback)
                 self.logger.error(f"Error calling subscriber for topic '{topic}': {e} [Callback: {callback_info}]")
                 # Don't break - continue with other subscribers
 
-        if successful_calls > 0:
-            self.logger.debug(f"Successfully published to {successful_calls} subscribers for topic '{topic}'")
-        if failed_calls > 0:
-            self.logger.warning(f"Failed to publish to {failed_calls} subscribers for topic '{topic}'")
-
         # Clean up empty topic
-        if not self.subscribers[topic]:
+        if topic in self.subscribers and not self.subscribers[topic]:
             del self.subscribers[topic]
 
     def get_subscriber_count(self, topic: str) -> int:
@@ -143,12 +121,10 @@ class MessageBroker:
         if topic in self.subscribers:
             count = len(self.subscribers[topic])
             del self.subscribers[topic]
-            self.logger.debug(f"Cleared {count} subscribers from topic '{topic}'")
 
     def request(self, topic: str, message: Any, timeout: float = 1.0):
         """Synchronous request-response pattern - returns first non-None response"""
         if topic not in self.subscribers:
-            self.logger.debug(f"No subscribers for request topic '{topic}'")
             return None
 
         # Get all live callbacks
@@ -161,23 +137,18 @@ class MessageBroker:
         # Call callbacks until we get a non-None response
         for callback in live_callbacks:
             try:
-                self.logger.debug(f"Making request to topic: '{topic}' message: {message}")
                 result = callback(message)
                 if result is not None:
-                    self.logger.debug(f"Got response from topic '{topic}': {result}")
                     return result
             except Exception as e:
                 self.logger.error(f"Error in request callback for topic '{topic}': {e}")
                 continue
 
-        self.logger.debug(f"No response received for request topic '{topic}'")
         return None
 
     def clear_all(self):
         """Clear all subscribers from all topics"""
-        total_cleared = sum(len(subs) for subs in self.subscribers.values())
         self.subscribers.clear()
-        self.logger.debug(f"Cleared all {total_cleared} subscribers from all topics")
 
 
 # Example usage and testing:

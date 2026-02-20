@@ -1,5 +1,26 @@
+from dataclasses import dataclass
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QWidget, QGridLayout, QSizePolicy
+
+
+@dataclass
+class ActionButtonConfig:
+    action_id: str
+    label: str
+    font_size: int = 20
+    enabled: bool = True
+    row: int | None = None
+    col: int | None = None
+    row_span: int = 1
+    col_span: int = 1
+
+
+@dataclass
+class CardConfig:
+    card_id: int
+    label: str
+    row: int | None = None
+    col: int | None = None
 
 
 try:
@@ -7,85 +28,61 @@ try:
     from .widgets.ControlButtonsWidget import ControlButtonsWidget
     from .widgets.RobotTrajectoryWidget import RobotTrajectoryWidget
     from ..core.config import DashboardConfig
-    from .factories.GlueCardFactory import GlueCardFactory
     from .managers.DashboardLayoutManager import DashboardLayoutManager
-    from .widgets.shared.DashboardCard import DashboardCard
 except ImportError:
-    from MaterialButton import MaterialButton
-    from widgets.ControlButtonsWidget import ControlButtonsWidget
-    from widgets.RobotTrajectoryWidget import RobotTrajectoryWidget
-    from config import DashboardConfig
-    from factories.GlueCardFactory import GlueCardFactory
-    from managers.DashboardLayoutManager import DashboardLayoutManager
-    from widgets.DashboardCard import DashboardCard
-
-
-class CardContainer(QWidget):
-    select_card_signal = pyqtSignal(object)
-
-    def __init__(self, columns=3, rows=2):
-        super().__init__()
-        self.columns = columns
-        self.rows = rows
-        self.total_cells = columns * rows
-
-        self.layout = QGridLayout()
-        self.layout.setSpacing(10)
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(self.layout)
-
-        for row in range(self.rows):
-            self.layout.setRowStretch(row, 1)
-            self.layout.setRowMinimumHeight(row, 180)
-
-        for col in range(self.columns):
-            self.layout.setColumnStretch(col, 1)
-            self.layout.setColumnMinimumWidth(col, 200)
-
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+    from dashboard.ui.widgets.shared.MaterialButton import MaterialButton
+    from dashboard.ui.widgets.ControlButtonsWidget import ControlButtonsWidget
+    from dashboard.ui.widgets.RobotTrajectoryWidget import RobotTrajectoryWidget
+    from dashboard.core.config import DashboardConfig
+    from dashboard.ui.managers.DashboardLayoutManager import DashboardLayoutManager
 
 
 class DashboardWidget(QWidget):
     """
     Pure UI facade for the dashboard.
 
-    Composes child widgets, exposes a typed setter API (called by the adapter),
-    and emits user-action signals (consumed by the adapter).
+    Accepts pre-built card widgets, places them in the configured grid,
+    and routes typed setter calls to the correct card by card_id.
 
-    Has zero knowledge of MessageBroker, topics, or any external system.
+    Has zero knowledge of MessageBroker, topics, factories, or any
+    external system.
     """
 
     # User-action signals (adapter connects these to system calls)
     start_requested = pyqtSignal()
     stop_requested = pyqtSignal()
     pause_requested = pyqtSignal()
-    clean_requested = pyqtSignal()
-    reset_errors_requested = pyqtSignal()
-    mode_toggle_requested = pyqtSignal(str)
-    glue_type_change_requested = pyqtSignal(int)  # cell_id
+    action_requested = pyqtSignal(str)  # emits action_id
 
-    def __init__(self, config: DashboardConfig = None, parent=None):
+    def __init__(
+        self,
+        config: DashboardConfig = None,
+        action_buttons: list = None,
+        cards: list = None,          # list of (widget, card_id, row, col)
+        parent=None,
+    ):
         super().__init__(parent)
         self.config = config or DashboardConfig()
-        self.card_factory = GlueCardFactory(self.config)
-        self.shared_card_container = CardContainer(columns=1, rows=3)
-        self.glue_cards_dict = {}
+        self._action_button_configs: list[ActionButtonConfig] = action_buttons or []
+        self._action_buttons: dict[str, MaterialButton] = {}
+        self._cards_input: list[tuple] = cards or []  # (widget, card_id, row, col)
+        self._cards: dict[int, QWidget] = {}          # card_id → widget
         self.init_ui()
 
     # ------------------------------------------------------------------ #
     #  Typed setter API (called by DashboardAdapter)                      #
     # ------------------------------------------------------------------ #
 
-    def set_cell_weight(self, cell_id: int, grams: float) -> None:
-        if card := self.glue_cards_dict.get(cell_id):
+    def set_cell_weight(self, card_id: int, grams: float) -> None:
+        if card := self._cards.get(card_id):
             card.set_weight(grams)
 
-    def set_cell_state(self, cell_id: int, state: str) -> None:
-        if card := self.glue_cards_dict.get(cell_id):
+    def set_cell_state(self, card_id: int, state: str) -> None:
+        if card := self._cards.get(card_id):
             card.set_state(state)
 
-    def set_cell_glue_type(self, cell_id: int, glue_type: str) -> None:
-        if card := self.glue_cards_dict.get(cell_id):
+    def set_cell_glue_type(self, card_id: int, glue_type: str) -> None:
+        if card := self._cards.get(card_id):
             card.set_glue_type(glue_type)
 
     def set_trajectory_image(self, image) -> None:
@@ -103,9 +100,25 @@ class DashboardWidget(QWidget):
     def disable_trajectory_drawing(self, _=None) -> None:
         self.trajectory_widget.disable_drawing()
 
-    def apply_button_config(self, config: dict) -> None:
-        """Called by the adapter with a resolved button config dict."""
-        self.control_buttons.apply_button_config(config)
+    def set_start_enabled(self, enabled: bool) -> None:
+        self.control_buttons.set_start_enabled(enabled)
+
+    def set_stop_enabled(self, enabled: bool) -> None:
+        self.control_buttons.set_stop_enabled(enabled)
+
+    def set_pause_enabled(self, enabled: bool) -> None:
+        self.control_buttons.set_pause_enabled(enabled)
+
+    def set_pause_text(self, text: str) -> None:
+        self.control_buttons.set_pause_text(text)
+
+    def set_action_button_enabled(self, action_id: str, enabled: bool) -> None:
+        if btn := self._action_buttons.get(action_id):
+            btn.setEnabled(enabled)
+
+    def set_action_button_text(self, action_id: str, text: str) -> None:
+        if btn := self._action_buttons.get(action_id):
+            btn.setText(text)
 
     # ------------------------------------------------------------------ #
     #  UI initialisation                                                   #
@@ -126,44 +139,35 @@ class DashboardWidget(QWidget):
         self.control_buttons.stop_clicked.connect(self.stop_requested.emit)
         self.control_buttons.pause_clicked.connect(self.pause_requested.emit)
 
-        self.clean_button = MaterialButton("Clean", font_size=20)
-        self.clean_button.clicked.connect(self.clean_requested.emit)
-
-        self.reset_errors_button = MaterialButton("Reset Errors", font_size=20)
-        self.reset_errors_button.clicked.connect(self.reset_errors_requested.emit)
-
-        self.mode_toggle_button = MaterialButton("Pick And Spray", font_size=20)
-        self.mode_toggle_button.clicked.connect(self._on_mode_toggle)
-
-        glue_cards = []
-        for i in range(1, self.config.glue_meters_count + 1):
-            card = self._create_glue_card(i, f"Glue {i}")
-            glue_cards.append(card)
-            self.glue_cards_dict[i] = card
+        action_widgets = self._prepare_action_buttons()
+        card_widgets = self._register_cards()
 
         self.layout_manager.setup_complete_layout(
             self.trajectory_widget,
-            glue_cards,
+            card_widgets,
             self.control_buttons,
-            self.clean_button,
-            self.reset_errors_button,
-            self.mode_toggle_button,
+            action_widgets,
         )
 
-    def _create_glue_card(self, index: int, label_text: str):
-        card = self.card_factory.create_glue_card(index, label_text)
-        card.change_glue_requested.connect(self.glue_type_change_requested.emit)
-        return card
+    def _prepare_action_buttons(self) -> list:
+        """Build action buttons from config; return (widget, row, col, row_span, col_span) tuples."""
+        result = []
+        for cfg in self._action_button_configs:
+            btn = MaterialButton(cfg.label, font_size=cfg.font_size)
+            btn.setEnabled(cfg.enabled)
+            action_id = cfg.action_id
+            btn.clicked.connect(lambda _=False, aid=action_id: self.action_requested.emit(aid))
+            self._action_buttons[action_id] = btn
+            result.append((btn, cfg.row, cfg.col, cfg.row_span, cfg.col_span))
+        return result
 
-    def _on_mode_toggle(self):
-        current_text = self.mode_toggle_button.text()
-        if current_text == "Pick And Spray":
-            new_mode = "Spray Only"
-        else:
-            new_mode = "Pick And Spray"
-        self.mode_toggle_button.setText(new_mode)
-        self.mode_toggle_requested.emit(new_mode)
-
+    def _register_cards(self) -> list:
+        """Store card_id→widget mapping; return (widget, row, col) tuples for layout manager."""
+        result = []
+        for (widget, card_id, row, col) in self._cards_input:
+            self._cards[card_id] = widget
+            result.append((widget, row, col))
+        return result
 
     # ------------------------------------------------------------------ #
     #  Cleanup                                                             #
@@ -172,6 +176,3 @@ class DashboardWidget(QWidget):
     def clean_up(self):
         """Release resources. Broker subscriptions are managed by DashboardAdapter."""
         pass
-
-
-

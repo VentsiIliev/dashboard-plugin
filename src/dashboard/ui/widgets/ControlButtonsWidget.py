@@ -55,8 +55,8 @@ class ControlButtonsWidget(QWidget):
         self.pause_btn = self._create_button(text="Pause")
 
         top_layout.addWidget(self.start_btn)
-        top_layout.addWidget(self.stop_btn)
-        bottom_layout.addWidget(self.pause_btn)
+        top_layout.addWidget(self.pause_btn)
+        bottom_layout.addWidget(self.stop_btn)
 
         main_layout.addWidget(top_frame)
         main_layout.addWidget(bottom_frame)
@@ -85,17 +85,6 @@ class ControlButtonsWidget(QWidget):
 
     def set_pause_text(self, text: str) -> None:
         self.pause_btn.setText(text)
-
-    def apply_button_config(self, config: dict) -> None:
-        """
-        Apply a button config dict supplied by the adapter.
-
-        Expected keys: start, stop, pause (bool), pause_text (str).
-        """
-        self.start_btn.setEnabled(config.get("start", False))
-        self.stop_btn.setEnabled(config.get("stop", False))
-        self.pause_btn.setEnabled(config.get("pause", False))
-        self.pause_btn.setText(config.get("pause_text", "Pause"))
 
 
 if __name__ == "__main__":
