@@ -27,12 +27,12 @@ from PyQt6.QtGui import QKeyEvent
 import numpy as np
 
 from localization import TranslationManager, Language
-from dashboard.DashboardWidget import DashboardWidget
+from glue_dispensing_dashboard.app.GlueDashboardAppWidget import GlueDashboardAppWidget
 from glue_dispensing_dashboard.adapter.GlueAdapter import GlueAdapter
 from glue_dispensing_dashboard.core.container import GlueContainer
-from glue_dispensing_dashboard.adapter.MessageBroker import MessageBroker
-from glue_dispensing_dashboard.adapter.topics import GlueCellTopics, SystemTopics, RobotTopics, VisionTopics
-from glue_dispensing_dashboard.adapter.ApplicationState import ApplicationState
+from external_dependencies.MessageBroker import MessageBroker
+from external_dependencies.topics import GlueCellTopics, SystemTopics, RobotTopics, VisionTopics
+from external_dependencies.ApplicationState import ApplicationState
 
 
 class TestPublisher:
@@ -198,19 +198,21 @@ translation_manager = TranslationManager(app, translations_dir=_translations_dir
 
 container = GlueContainer()
 built_cards = GlueAdapter.build_cards(container)
-dashboard = DashboardWidget(config=GlueAdapter.CONFIG,
-                            action_buttons=GlueAdapter.ACTION_BUTTONS,
-                            cards=built_cards)
-adapter = GlueAdapter(dashboard, container)
+ui = GlueDashboardAppWidget(
+    config=GlueAdapter.CONFIG,
+    action_buttons=GlueAdapter.ACTION_BUTTONS,
+    cards=built_cards,
+)
+adapter = GlueAdapter(ui, container)
 adapter.connect()
 
 # Enable trajectory drawing by default for testing
-dashboard.enable_trajectory_drawing()
+ui.enable_trajectory_drawing()
 
 broker = MessageBroker()
 test_publisher = TestPublisher(broker)
 
-window = TestWindow(dashboard, adapter, test_publisher, translation_manager)
+window = TestWindow(ui, adapter, test_publisher, translation_manager)
 window.show()
 
 print("\n" + "="*60)

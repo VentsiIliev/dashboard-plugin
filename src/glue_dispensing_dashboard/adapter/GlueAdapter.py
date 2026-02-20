@@ -1,5 +1,5 @@
 """
-GlueAdapter — bridge between DashboardWidget (pure UI) and the glue dispensing system.
+GlueAdapter — bridge between GlueDashboardAppWidget (UI facade) and the glue dispensing system.
 """
 
 from __future__ import annotations
@@ -9,29 +9,33 @@ from typing import Callable
 from PyQt6.QtCore import QCoreApplication
 
 try:
-    from .MessageBroker import MessageBroker
+    from external_dependencies.MessageBroker import MessageBroker
 except ImportError:
-    from src.glue_dispensing_dashboard.adapter.MessageBroker import MessageBroker
+    from src.external_dependencies.MessageBroker import MessageBroker
 
 try:
-    from ..core._compat import (
+    from external_dependencies._compat import (
         GlueCellTopics, RobotTopics, VisionTopics, SystemTopics,
     )
 except ImportError:
-    from src.glue_dispensing_dashboard.core._compat import (
+    from src.external_dependencies._compat import (
         GlueCellTopics, RobotTopics, VisionTopics, SystemTopics,
     )
 
 try:
-    from .ApplicationState import ApplicationState
+    from external_dependencies.ApplicationState import ApplicationState
 except ImportError:
-    from src.glue_dispensing_dashboard.adapter.ApplicationState import ApplicationState
+    from src.external_dependencies.ApplicationState import ApplicationState
 
 try:
-    from src.dashboard.DashboardWidget import DashboardWidget, ActionButtonConfig, CardConfig
+    from src.dashboard.DashboardWidget import ActionButtonConfig, CardConfig
 except ImportError:
-    from dashboard.DashboardWidget import DashboardWidget
     from dashboard.config import ActionButtonConfig, CardConfig
+
+try:
+    from ..app.GlueDashboardAppWidget import GlueDashboardAppWidget
+except ImportError:
+    from glue_dispensing_dashboard.app.GlueDashboardAppWidget import GlueDashboardAppWidget
 
 try:
     from ..core.container import GlueContainer
@@ -91,8 +95,8 @@ class GlueAdapter:
             for cfg in cls.CARDS
         ]
 
-    def __init__(self, dashboard: DashboardWidget, container: GlueContainer):
-        self._dashboard = dashboard
+    def __init__(self, ui: GlueDashboardAppWidget, container: GlueContainer):
+        self._ui = ui
         self._container = container
         self._broker = MessageBroker()
         self._subscriptions: list[tuple[str, Callable]] = []
@@ -103,6 +107,7 @@ class GlueAdapter:
         self._subscribe_broker_to_ui()
         self._connect_ui_signals_to_system()
         self._initialize_display()
+        self._ui.destroyed.connect(self.disconnect)
 
     def disconnect(self) -> None:
         for topic, callback in reversed(self._subscriptions):
@@ -121,43 +126,47 @@ class GlueAdapter:
             self._sub(GlueCellTopics.cell_glue_type(i), self._make_glue_type_handler(i))
 
         self._sub(SystemTopics.APPLICATION_STATE, self._on_app_state)
-        self._sub(RobotTopics.TRAJECTORY_UPDATE_IMAGE, self._dashboard.set_trajectory_image)
-        self._sub(VisionTopics.LATEST_IMAGE,           self._dashboard.set_trajectory_image)
-        self._sub(RobotTopics.TRAJECTORY_POINT,        self._dashboard.update_trajectory_point)
-        self._sub(RobotTopics.TRAJECTORY_BREAK,        self._dashboard.break_trajectory)
-        self._sub(RobotTopics.TRAJECTORY_STOP,         self._dashboard.disable_trajectory_drawing)
-        self._sub(RobotTopics.TRAJECTORY_START,        self._dashboard.enable_trajectory_drawing)
+        self._sub(RobotTopics.TRAJECTORY_UPDATE_IMAGE, self._ui.set_trajectory_image)
+        self._sub(VisionTopics.LATEST_IMAGE,           self._ui.set_trajectory_image)
+        self._sub(RobotTopics.TRAJECTORY_POINT,        self._ui.update_trajectory_point)
+        self._sub(RobotTopics.TRAJECTORY_BREAK,        self._ui.break_trajectory)
+        self._sub(RobotTopics.TRAJECTORY_STOP,         self._ui.disable_trajectory_drawing)
+        self._sub(RobotTopics.TRAJECTORY_START,        self._ui.enable_trajectory_drawing)
 
     def _make_weight_handler(self, cell_id: int) -> Callable:
-        return lambda grams: self._dashboard.set_cell_weight(cell_id, grams)
+        return lambda grams: self._ui.set_cell_weight(cell_id, grams)
 
     def _make_state_handler(self, cell_id: int) -> Callable:
         def on_state(msg):
             state = (msg.get("current_state", "unknown") if isinstance(msg, dict) else str(msg))
-            self._dashboard.set_cell_state(cell_id, state)
+            self._ui.set_cell_state(cell_id, state)
         return on_state
 
     def _make_glue_type_handler(self, cell_id: int) -> Callable:
-        return lambda glue_type: self._dashboard.set_cell_glue_type(cell_id, glue_type)
+        return lambda glue_type: self._ui.set_cell_glue_type(cell_id, glue_type)
 
     def _connect_ui_signals_to_system(self) -> None:
-        d = self._dashboard
-        d.start_requested.connect(self._on_start)
-        d.stop_requested.connect(self._on_stop)
-        d.pause_requested.connect(self._on_pause)
-        d.action_requested.connect(self._on_action)
-        for card in d._cards.values():
-            card.change_glue_requested.connect(self._on_glue_type_change)
+        self._ui.start_requested.connect(self._on_start)
+        self._ui.stop_requested.connect(self._on_stop)
+        self._ui.pause_requested.connect(self._on_pause)
+        self._ui.action_requested.connect(self._on_action)
+        self._ui.language_changed.connect(self.retranslateUi)
+        for cfg in self.CARDS:
+            card = self._ui.get_card(cfg.card_id)
+            if card:
+                card.change_glue_requested.connect(self._on_glue_type_change)
 
     def _disconnect_ui_signals(self) -> None:
         try:
-            d = self._dashboard
-            d.start_requested.disconnect(self._on_start)
-            d.stop_requested.disconnect(self._on_stop)
-            d.pause_requested.disconnect(self._on_pause)
-            d.action_requested.disconnect(self._on_action)
-            for card in d._cards.values():
-                card.change_glue_requested.disconnect(self._on_glue_type_change)
+            self._ui.start_requested.disconnect(self._on_start)
+            self._ui.stop_requested.disconnect(self._on_stop)
+            self._ui.pause_requested.disconnect(self._on_pause)
+            self._ui.action_requested.disconnect(self._on_action)
+            self._ui.language_changed.disconnect(self.retranslateUi)
+            for cfg in self.CARDS:
+                card = self._ui.get_card(cfg.card_id)
+                if card:
+                    card.change_glue_requested.disconnect(self._on_glue_type_change)
         except RuntimeError:
             pass
 
@@ -172,10 +181,10 @@ class GlueAdapter:
         self._current_state = state
         config = self.BUTTON_CONFIG.get(state)
         if config:
-            self._dashboard.set_start_enabled(config["start"])
-            self._dashboard.set_stop_enabled(config["stop"])
-            self._dashboard.set_pause_enabled(config["pause"])
-            self._dashboard.set_pause_text(self._t(config["pause_text"]))
+            self._ui.set_start_enabled(config["start"])
+            self._ui.set_stop_enabled(config["stop"])
+            self._ui.set_pause_enabled(config["pause"])
+            self._ui.set_pause_text(self._t(config["pause_text"]))
 
     def _on_start(self):
         print(f"Start Pressed")
@@ -190,7 +199,7 @@ class GlueAdapter:
         if action_id == "mode_toggle":
             self._mode_toggle_index = 1 - self._mode_toggle_index
             new_label = self._MODE_TOGGLE_LABELS[self._mode_toggle_index]
-            self._dashboard.set_action_button_text("mode_toggle", self._t(new_label))
+            self._ui.set_action_button_text("mode_toggle", self._t(new_label))
             self._broker.publish(SystemTopics.SYSTEM_MODE_CHANGE, new_label)
             print(f"Mode Toggled to {new_label}")
         elif action_id == "clean":
@@ -207,7 +216,7 @@ class GlueAdapter:
             selection_page = wizard.page(6)
             selected_glue_type = selection_page.get_selected_option() if hasattr(selection_page, 'get_selected_option') else None
             if selected_glue_type:
-                self._dashboard.set_cell_glue_type(cell_id, selected_glue_type)
+                self._ui.set_cell_glue_type(cell_id, selected_glue_type)
 
     def _initialize_display(self) -> None:
         for cfg in self.CARDS:
@@ -215,9 +224,9 @@ class GlueAdapter:
             initial_state = self._container.get_cell_initial_state(i)
             glue_type = self._container.get_cell_glue_type(i)
             if initial_state:
-                self._dashboard.set_cell_state(i, initial_state.get("current_state", "unknown"))
+                self._ui.set_cell_state(i, initial_state.get("current_state", "unknown"))
             if glue_type:
-                self._dashboard.set_cell_glue_type(i, glue_type)
+                self._ui.set_cell_glue_type(i, glue_type)
 
     def _sub(self, topic: str, callback: Callable) -> None:
         self._broker.subscribe(topic, callback)
@@ -236,10 +245,10 @@ class GlueAdapter:
         Called by GlueDashboardAppWidget.changeEvent on LanguageChange."""
         # Static action buttons (reset_errors, clean — labels never change)
         for cfg in self.ACTION_BUTTONS:
-            self._dashboard.set_action_button_text(cfg.action_id, self._t(cfg.label))
+            self._ui.set_action_button_text(cfg.action_id, self._t(cfg.label))
 
         # Mode toggle tracks its own position independently
-        self._dashboard.set_action_button_text(
+        self._ui.set_action_button_text(
             "mode_toggle", self._t(self._MODE_TOGGLE_LABELS[self._mode_toggle_index])
         )
 
@@ -247,11 +256,11 @@ class GlueAdapter:
         if self._current_state is not None:
             config = self.BUTTON_CONFIG.get(self._current_state)
             if config:
-                self._dashboard.set_pause_text(self._t(config["pause_text"]))
+                self._ui.set_pause_text(self._t(config["pause_text"]))
 
         # Card titles
         for cfg in self.CARDS:
-            card = self._dashboard._cards.get(cfg.card_id)
+            card = self._ui.get_card(cfg.card_id)
             if card:
                 card.title_label.setText(self._t(cfg.label))
 
