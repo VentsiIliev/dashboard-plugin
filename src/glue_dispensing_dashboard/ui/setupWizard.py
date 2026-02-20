@@ -9,12 +9,12 @@ from PyQt6.QtGui import QPixmap, QFont, QColor, QIcon
 import sys
 
 try:
-    from ...ui.widgets.shared.MaterialButton import MaterialButton
+    from src.dashboard.ui.widgets.shared.MaterialButton import MaterialButton
 except ImportError:
     from dashboard.ui.widgets.shared.MaterialButton import MaterialButton
 
 try:
-    from ...styles import WIZARD_IMAGE_PLACEHOLDER_STYLE, WIZARD_WARNING_LABEL_STYLE, STATUS_ERROR
+    from src.dashboard.styles import WIZARD_IMAGE_PLACEHOLDER_STYLE, WIZARD_WARNING_LABEL_STYLE, STATUS_ERROR
 except ImportError:
     try:
         from dashboard.styles import WIZARD_IMAGE_PLACEHOLDER_STYLE, WIZARD_WARNING_LABEL_STYLE, STATUS_ERROR

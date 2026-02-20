@@ -11,7 +11,7 @@ except ImportError:
     from dashboard.glue.core.container import GlueContainer
 
 try:
-    from ...ui.DashboardWidget import DashboardWidget
+    from src.dashboard.ui.DashboardWidget import DashboardWidget
 except ImportError:
     from dashboard.ui.DashboardWidget import DashboardWidget
 
@@ -21,7 +21,7 @@ except ImportError:
     from dashboard.glue.adapter.GlueAdapter import GlueAdapter
 
 try:
-    from ...ui.DashboardWidget import ActionButtonConfig
+    from src.dashboard.ui.DashboardWidget import ActionButtonConfig
 except ImportError:
     from dashboard.ui.DashboardWidget import ActionButtonConfig
 

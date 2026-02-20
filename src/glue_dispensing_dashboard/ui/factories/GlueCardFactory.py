@@ -1,13 +1,13 @@
 try:
     from ..widgets.GlueMeterCard import GlueMeterCard
-    from ....core.config import DashboardConfig
+    from ...core.config import GlueDashboardConfig
 except ImportError:
-    from dashboard.glue.ui.widgets.GlueMeterCard import GlueMeterCard
-    from dashboard.core.config import DashboardConfig
+    from glue_dispensing_dashboard.ui.widgets.GlueMeterCard import GlueMeterCard
+    from glue_dispensing_dashboard.core.config import GlueDashboardConfig
 
 
 class GlueCardFactory:
-    def __init__(self, config: DashboardConfig, container=None):
+    def __init__(self, config: GlueDashboardConfig, container=None):
         self.config = config
         self.container = container
 

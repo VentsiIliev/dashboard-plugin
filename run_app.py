@@ -25,11 +25,11 @@ from PyQt6.QtGui import QKeyEvent
 import numpy as np
 
 from dashboard.ui.DashboardWidget import DashboardWidget
-from dashboard.glue.adapter.GlueAdapter import GlueAdapter
-from dashboard.glue.core.container import GlueContainer
-from dashboard.glue.adapter.MessageBroker import MessageBroker
-from dashboard.glue.adapter.topics import GlueCellTopics, SystemTopics, RobotTopics, VisionTopics
-from dashboard.glue.adapter.ApplicationState import ApplicationState
+from glue_dispensing_dashboard.adapter.GlueAdapter import GlueAdapter
+from glue_dispensing_dashboard.core.container import GlueContainer
+from glue_dispensing_dashboard.adapter.MessageBroker import MessageBroker
+from glue_dispensing_dashboard.adapter.topics import GlueCellTopics, SystemTopics, RobotTopics, VisionTopics
+from glue_dispensing_dashboard.adapter.ApplicationState import ApplicationState
 
 
 class TestPublisher:

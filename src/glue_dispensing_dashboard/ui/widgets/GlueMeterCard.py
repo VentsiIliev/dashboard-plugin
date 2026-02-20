@@ -9,12 +9,12 @@ except ImportError:
     from dashboard.glue.ui.widgets.GlueMeterWidget import GlueMeterWidget
 
 try:
-    from ....ui.widgets.shared.MaterialButton import MaterialButton
+    from src.dashboard.ui.widgets.shared.MaterialButton import MaterialButton
 except ImportError:
     from dashboard.ui.widgets.shared.MaterialButton import MaterialButton
 
 try:
-    from ....styles import (
+    from src.dashboard.styles import (
         STATUS_UNKNOWN, STATUS_INITIALIZING, STATUS_READY,
         STATUS_LOW_WEIGHT, STATUS_EMPTY, STATUS_ERROR, STATUS_DISCONNECTED,
         CARD_STYLE, CARD_HEADER_STYLE, INFO_FRAME_STYLE, METER_FRAME_STYLE,

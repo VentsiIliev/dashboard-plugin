@@ -8,19 +8,19 @@ from dataclasses import dataclass, field
 from typing import Optional, Callable
 
 try:
-    from ...core.config import DashboardConfig
+    from .config import GlueDashboardConfig
 except ImportError:
-    from dashboard.core.config import DashboardConfig
+    from glue_dispensing_dashboard.core.config import GlueDashboardConfig
 
 try:
-    from ...core.protocols import (
+    from dashboard.core.protocols import (
         ControllerProtocol,
         GlueCellManagerProtocol,
         CellStateManagerProtocol,
         CellWeightMonitorProtocol,
     )
 except ImportError:
-    from dashboard.core.protocols import (
+    from src.dashboard.core.protocols import (
         ControllerProtocol,
         GlueCellManagerProtocol,
         CellStateManagerProtocol,
@@ -34,7 +34,7 @@ class GlueContainer:
     glue_cell_manager: Optional[GlueCellManagerProtocol] = None
     cell_state_manager: Optional[CellStateManagerProtocol] = None
     cell_weight_monitor: Optional[CellWeightMonitorProtocol] = None
-    config: DashboardConfig = field(default_factory=DashboardConfig)
+    config: GlueDashboardConfig = field(default_factory=GlueDashboardConfig)
 
     @property
     def controller_service(self):

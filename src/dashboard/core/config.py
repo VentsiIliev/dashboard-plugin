@@ -10,7 +10,6 @@ class DashboardConfig:
     card_grid_cols: int = 1
     card_grid_min_width: int = 350
     card_grid_max_width: int = 450
-    default_cell_capacity_grams: float = 5000.0
     display_fps_ms: int = 30
     trajectory_trail_length: int = 100
     action_grid_rows: int = 2

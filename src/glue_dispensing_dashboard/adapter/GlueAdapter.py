@@ -9,46 +9,46 @@ from typing import Callable
 try:
     from .MessageBroker import MessageBroker
 except ImportError:
-    from src.dashboard.glue.adapter.MessageBroker import MessageBroker
+    from src.glue_dispensing_dashboard.adapter.MessageBroker import MessageBroker
 
 try:
     from ..core._compat import (
         GlueCellTopics, RobotTopics, VisionTopics, SystemTopics,
     )
 except ImportError:
-    from src.dashboard.glue.core._compat import (
+    from src.glue_dispensing_dashboard.core._compat import (
         GlueCellTopics, RobotTopics, VisionTopics, SystemTopics,
     )
 
 try:
     from .ApplicationState import ApplicationState
 except ImportError:
-    from src.dashboard.glue.adapter.ApplicationState import ApplicationState
+    from src.glue_dispensing_dashboard.adapter.ApplicationState import ApplicationState
 
 try:
-    from ...ui.DashboardWidget import DashboardWidget, ActionButtonConfig, CardConfig
+    from src.dashboard.ui.DashboardWidget import DashboardWidget, ActionButtonConfig, CardConfig
 except ImportError:
     from dashboard.ui.DashboardWidget import DashboardWidget, ActionButtonConfig, CardConfig
 
 try:
     from ..core.container import GlueContainer
 except ImportError:
-    from dashboard.glue.core.container import GlueContainer
+    from glue_dispensing_dashboard.core.container import GlueContainer
 
 try:
-    from ...core.config import DashboardConfig
+    from ..core.config import GlueDashboardConfig
 except ImportError:
-    from dashboard.core.config import DashboardConfig
+    from glue_dispensing_dashboard.core.config import GlueDashboardConfig
 
 try:
     from ..ui.setupWizard import SetupWizard
 except ImportError:
-    from dashboard.glue.ui.setupWizard import SetupWizard
+    from glue_dispensing_dashboard.ui.setupWizard import SetupWizard
 
 try:
     from ..ui.factories.GlueCardFactory import GlueCardFactory
 except ImportError:
-    from dashboard.glue.ui.factories.GlueCardFactory import GlueCardFactory
+    from glue_dispensing_dashboard.ui.factories.GlueCardFactory import GlueCardFactory
 
 
 class GlueAdapter:
@@ -76,7 +76,7 @@ class GlueAdapter:
         CardConfig(card_id=3, label="Glue 3"),
     ]
 
-    CONFIG: DashboardConfig = DashboardConfig()
+    CONFIG: GlueDashboardConfig = GlueDashboardConfig()
 
     _MODE_TOGGLE_LABELS = ("Pick And Spray", "Spray Only")
 
